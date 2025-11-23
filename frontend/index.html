@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIEK AI Chatbot</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1>FIEK AI Chatbot</h1>
+                    <p class="subtitle">Faculty of Electrical and Computer Engineering</p>
+                </div>
+                <div class="language-toggle">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="sq">SQ</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <p>Hello! I'm the FIEK AI Chatbot. I can help you with information about:</p>
+                        <ul>
+                            <li>Academic programs (BSc, MSc, PhD)</li>
+                            <li>Faculty staff and professors</li>
+                            <li>Course schedules</li>
+                            <li>Regulations and policies</li>
+                            <li>Projects and collaborations</li>
+                            <li>Infrastructure and facilities</li>
+                            <li>And much more!</li>
+                        </ul>
+                        <p>Ask me anything in English or Albanian!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        class="chat-input" 
+                        placeholder="Ask me anything about FIEK..."
+                        autocomplete="off"
+                    >
+                    <button id="sendButton" class="send-button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <div class="suggestions" id="suggestions">
+                    <button class="suggestion-chip" data-query="What are the academic programs?">Academic Programs</button>
+                    <button class="suggestion-chip" data-query="Who is the dean?">Dean Information</button>
+                    <button class="suggestion-chip" data-query="What is the vision of FIEK?">Vision & Mission</button>
+                    <button class="suggestion-chip" data-query="Show me the schedule">Course Schedule</button>
+                </div>
+            </div>
+        </main>
+
+        <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+            <div class="spinner"></div>
+            <span>Thinking...</span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

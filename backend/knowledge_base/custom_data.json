@@ -1,0 +1,15 @@
+[
+  {
+    "title": "Keshilli i Studenteve",
+    "url": "",
+    "content": "Keshilli i Studenteve është organi përfaqësues i studentëve në Fakultetin e Inxhinierisë Elektrike dhe Kompjuterike (FIEK). Këshilli ka për detyrë të përfaqësojë interesat e studentëve, të organizojë aktivitete studentore, të promovojë bashkëpunimin midis studentëve dhe fakultetit, dhe të kontribuojë në përmirësimin e cilësisë së arsimit. Këshilli i Studenteve organizon evente, aktivitete sociale dhe akademike, dhe punon për të siguruar që zëri i studentëve të dëgjohet në vendimmarrje të rëndësishme të fakultetit.",
+    "type": "custom"
+  },
+  {
+    "title": "SEMS - Student Enrollment Management System",
+    "url": "https://sems.uni-pr.edu/Account/Login",
+    "content": "SEMS (Student Enrollment Management System) është sistemi i menaxhimit të regjistrimit të studentëve në Universitetin e Prishtinës. Studentët mund të hyjnë në sistem për të regjistruar lëndët, parë notat, shkarkuar dokumente, dhe për të kryer procedura të tjera administrative. Qasja në SEMS bëhet përmes faqes zyrtare: https://sems.uni-pr.edu/Account/Login. Studentët duhet të përdorin kredencialet e tyre për të hyrë në sistem.",
+    "type": "custom"
+  }
+]
+
