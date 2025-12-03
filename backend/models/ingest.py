@@ -1,6 +1,11 @@
 import os
 import shutil
 import time
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
+
 import pytesseract
 from pdf2image import convert_from_path
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
@@ -8,7 +13,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document 
-from dotenv import load_dotenv
 
 try:
     import requests
@@ -17,10 +21,62 @@ try:
 except ImportError:
     HAS_FALLBACK = False
     print("⚠️  requests/BeautifulSoup not available. Install with: pip install requests beautifulsoup4")
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
+# Cross-platform Tesseract OCR path detection
+def find_tesseract():
+    """Find Tesseract executable path across different platforms."""
+    import platform
+    import shutil
+    
+    # First check environment variable (user override)
+    env_path = os.getenv("TESSERACT_CMD")
+    if env_path and os.path.exists(env_path):
+        return env_path
+    
+    # Check if tesseract is in PATH
+    tesseract_path = shutil.which("tesseract")
+    if tesseract_path:
+        return tesseract_path
+    
+    # Platform-specific default paths
+    system = platform.system()
+    if system == "Windows":
+        possible_paths = [
+            r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            os.path.expanduser(r"~\AppData\Local\Tesseract-OCR\tesseract.exe"),
+        ]
+    elif system == "Darwin":  # macOS
+        possible_paths = [
+            "/usr/local/bin/tesseract",
+            "/opt/homebrew/bin/tesseract",
+            "/usr/bin/tesseract",
+        ]
+    else:  # Linux and others
+        possible_paths = [
+            "/usr/bin/tesseract",
+            "/usr/local/bin/tesseract",
+        ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+    
+    return None
 
-load_dotenv()
+# Set Tesseract path if found, otherwise OCR will be disabled
+TESSERACT_PATH = find_tesseract()
+if TESSERACT_PATH:
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+    HAS_TESSERACT = True
+else:
+    HAS_TESSERACT = False
+    print("⚠️  Tesseract OCR not found. OCR functionality will be disabled.")
+    print("   To enable OCR, install Tesseract:")
+    print("   - Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki")
+    print("   - macOS: brew install tesseract")
+    print("   - Linux: sudo apt-get install tesseract-ocr (Ubuntu/Debian) or sudo yum install tesseract (RHEL/CentOS)")
+    print("   - Or set TESSERACT_CMD environment variable to the tesseract executable path")
 
 os.environ["USER_AGENT"] = "FIEK_Student_Project/1.0"
 
@@ -54,14 +110,27 @@ URLS = [
 def extract_text_from_scanned_pdf(pdf_path):
     """
     Converts PDF pages to images, then runs OCR to get text.
+    Requires Tesseract OCR to be installed.
     """
+    if not HAS_TESSERACT:
+        print(f"⚠️  OCR not available for {pdf_path}. Tesseract not installed.")
+        return ""
+    
     print(f"🔍 Running OCR on scanned doc: {pdf_path}...")
     try:
         images = convert_from_path(pdf_path)
         text = ""
         for i, image in enumerate(images):
             # Extract text from image
-            page_text = pytesseract.image_to_string(image, lang='eng+sqi') # Tries English and Albanian
+            # Try English and Albanian languages
+            try:
+                page_text = pytesseract.image_to_string(image, lang='eng+sqi')
+            except Exception:
+                # Fallback to English only if Albanian language pack not available
+                try:
+                    page_text = pytesseract.image_to_string(image, lang='eng')
+                except Exception:
+                    page_text = pytesseract.image_to_string(image)
             text += f"\n[Page {i+1}]\n{page_text}"
         return text
     except Exception as e:
