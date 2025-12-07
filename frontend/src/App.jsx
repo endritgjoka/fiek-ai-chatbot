@@ -9,7 +9,7 @@ function App() {
       id: 'welcome',
       role: 'assistant',
       content:
-        "Hi, I'm your AI assistant. Ask me anything about your project, code, or ideas and I'll respond using the model behind this chat.",
+        "Hi! I'm your FIEK AI chatbot. I'm here to help you find information about FIEK, answer questions about the faculty, assist with projects, and provide guidance on academic matters. How can I assist you today?",
       ts: new Date().toISOString(),
     },
   ])
@@ -19,7 +19,7 @@ function App() {
   const [modelStatus, setModelStatus] = useState('online')
   const [temperature, setTemperature] = useState(0.7)
   const [systemPrompt, setSystemPrompt] = useState(
-    'You are a helpful AI assistant specialized in helping with university projects and coding.',
+    'You are a helpful AI assistant specialized in providing accurate information about FIEK faculty, programs, academic resources, and helping students with their questions.',
   )
   const messagesEndRef = useRef(null)
 
@@ -113,6 +113,15 @@ function App() {
     setError('')
   }
 
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      // You could add a toast notification here if desired
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
   return (
     <div className="app-shell">
       <div className="app-gradient" />
@@ -120,10 +129,7 @@ function App() {
       <div className="chat-layout">
         <aside className="sidebar">
           <div className="sidebar-header">
-            <div className="brand-mark">
-              <div className="brand-orbit" />
-              <span className="brand-dot" />
-            </div>
+            <img src="/Up.png" alt="FIEK Logo" className="sidebar-logo" />
             <div>
               <div className="brand-title">FIEK AI Chatbot</div>
               <div className="brand-subtitle">Project assistant</div>
@@ -206,6 +212,10 @@ function App() {
                 Start by describing your assignment, then ask specific questions.
               </div>
             </div>
+            <div className="chat-header-logo">
+              <img src="/Up.png" alt="FIEK Logo" className="logo-image" />
+              <span className="logo-text">FIEK AI CHATBOT</span>
+            </div>
           </header>
 
           <section className="chat-stream">
@@ -230,6 +240,26 @@ function App() {
                     </div>
                     <div className="bubble">
                       <p>{msg.content}</p>
+                      <button
+                        className="copy-btn"
+                        onClick={() => copyToClipboard(msg.content)}
+                        title="Copy message"
+                        aria-label="Copy message"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
