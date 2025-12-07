@@ -7,6 +7,9 @@ streamlit>=1.28.0
 requests>=2.31.0
 beautifulsoup4>=4.12.2
 lxml>=4.9.3
+# Browser automation for JavaScript-rendered pages (optional but recommended for Cloudflare-protected sites)
+playwright>=1.40.0
+selenium>=4.15.0
 
 # PDF processing
 pypdf2>=3.0.1

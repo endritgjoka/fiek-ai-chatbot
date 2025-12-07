@@ -99,13 +99,31 @@ cp .env.example .env  # On macOS/Linux
 # OPENAI_API_KEY=your_api_key_here
 ```
 
-4. **Install Tesseract OCR (Optional - for scanned PDF support):**
+4. **Install Playwright (REQUIRED for Cloudflare-protected pages):**
+   ```bash
+   # Install Playwright Python package
+   pip install playwright
+   
+   # Install Chromium browser (required - downloads ~150MB)
+   playwright install chromium
+   ```
+   
+   **Why?** The FIEK website uses Cloudflare protection. Without Playwright, most web pages will fail to scrape with "Cloudflare challenge page" errors.
+   
+   **Verify installation:**
+   ```bash
+   python -c "from playwright.sync_api import sync_playwright; print('✅ Playwright installed!')"
+   ```
+   
+   See `backend/INSTALL_PLAYWRIGHT.md` for detailed instructions and troubleshooting.
+
+5. **Install Tesseract OCR (Optional - for scanned PDF support):**
    - **macOS:** `brew install tesseract`
    - **Ubuntu/Debian:** `sudo apt-get install tesseract-ocr`
    - **Windows:** Download from [Tesseract installer](https://github.com/UB-Mannheim/tesseract/wiki)
    - If Tesseract is in a non-standard location, set `TESSERACT_CMD` in your `.env` file
 
-5. **Ingest documents and build vector database:**
+6. **Ingest documents and build vector database:**
 ```bash
 # Make sure virtual environment is activated
 python models/ingest.py
