@@ -650,6 +650,27 @@ kbd {
   }
 }
 
+.streaming-cursor {
+  display: inline-block;
+  width: 0.5rem;
+  height: 1em;
+  background: #6366f1;
+  margin-left: 0.2rem;
+  animation: cursor-blink 1s infinite;
+  vertical-align: baseline;
+}
+
+@keyframes cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (max-width: 960px) {
   .chat-layout {
     grid-template-columns: minmax(0, 1fr);

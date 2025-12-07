@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 const MODEL_BACKEND_URL = '/api/chat'
+const MODEL_BACKEND_STREAM_URL = '/api/chat/stream'
 
 function App() {
   const [messages, setMessages] = useState([
@@ -40,20 +41,37 @@ function App() {
     }
 
     setMessages((prev) => [...prev, userMessage])
+    const currentInput = input.trim()
     setInput('')
     setIsSending(true)
 
+    // Create assistant message placeholder for streaming
+    const assistantMessageId = `assistant-${Date.now()}`
+    const assistantMessage = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      ts: new Date().toISOString(),
+      isStreaming: true,
+    }
+
+    setMessages((prev) => [...prev, assistantMessage])
+
     try {
+      // Build messages array with conversation history (excluding system prompt as backend handles it)
+      const conversationMessages = messages
+        .filter((msg) => msg.role !== 'system') // Remove any system messages from history
+        .map(({ role, content }) => ({ role, content }))
+      
+      // Add the current user message
+      conversationMessages.push({ role: 'user', content: currentInput })
+
       const payload = {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages.map(({ role, content }) => ({ role, content })),
-          { role: 'user', content: userMessage.content },
-        ],
-        temperature,
+        messages: conversationMessages,
       }
 
-      const res = await fetch(MODEL_BACKEND_URL, {
+      // Use streaming endpoint
+      const res = await fetch(MODEL_BACKEND_STREAM_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,40 +80,90 @@ function App() {
       })
 
       if (!res.ok) {
-        throw new Error(`Backend error: ${res.status}`)
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || `Backend error: ${res.status}`)
       }
 
-      const data = await res.json()
+      // Handle streaming response
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let accumulatedContent = ''
 
-      const assistantText =
-        data?.reply ??
-        data?.content ??
-        'The model responded, but the frontend could not understand the response shape. Please adjust the frontend parsing.'
+      while (true) {
+        const { done, value } = await reader.read()
+        
+        if (done) break
 
-      const assistantMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: assistantText,
-        ts: new Date().toISOString(),
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || '' // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              
+              if (data.type === 'chunk') {
+                accumulatedContent += data.content
+                // Update the message in real-time
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: accumulatedContent }
+                      : msg
+                  )
+                )
+              } else if (data.type === 'sources') {
+                accumulatedContent += data.content
+                // Update the message with sources
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: accumulatedContent, isStreaming: false }
+                      : msg
+                  )
+                )
+              } else if (data.type === 'done') {
+                // Final update to remove streaming flag
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, isStreaming: false }
+                      : msg
+                  )
+                )
+              } else if (data.type === 'error') {
+                throw new Error(data.content)
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e)
+            }
+          }
+        }
       }
 
-      setMessages((prev) => [...prev, assistantMessage])
       setModelStatus('online')
     } catch (err) {
       console.error(err)
       setError(
-        'Could not reach the model backend. Check that your server is running and the URL in App.jsx matches it.',
+        err.message || 'Could not reach the model backend. Check that your server is running and the URL in App.jsx matches it.',
       )
       setModelStatus('offline')
 
-      const fallbackMessage = {
-        id: `assistant-error-${Date.now()}`,
-        role: 'assistant',
-        content:
-          "I'm having trouble reaching the model server. Once your backend is running, I will be able to respond normally.",
-        ts: new Date().toISOString(),
-      }
-      setMessages((prev) => [...prev, fallbackMessage])
+      // Update the streaming message with error
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content:
+                  "I'm having trouble reaching the model server. Once your backend is running, I will be able to respond normally.",
+                isStreaming: false,
+              }
+            : msg
+        )
+      )
     } finally {
       setIsSending(false)
     }
@@ -164,13 +232,15 @@ function App() {
               <label className="control-label">
                 System behavior
                 <span className="control-label-sub">
-                  This instruction is sent as a system prompt.
+                  System prompt is handled by the backend. This control is disabled.
                 </span>
               </label>
               <textarea
                 className="control-textarea"
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
+                disabled
+                style={{ opacity: 0.6, cursor: 'not-allowed' }}
               />
             </div>
 
@@ -178,7 +248,7 @@ function App() {
               <label className="control-label">
                 Temperature
                 <span className="control-label-sub">
-                  Lower is more focused, higher is more creative.
+                  Temperature is set to 0 (focused) by the backend. This control is disabled.
                 </span>
               </label>
               <div className="control-row">
@@ -190,6 +260,8 @@ function App() {
                   step="0.05"
                   value={temperature}
                   onChange={(e) => setTemperature(Number(e.target.value))}
+                  disabled
+                  style={{ opacity: 0.6, cursor: 'not-allowed' }}
                 />
                 <span className="slider-value">{temperature.toFixed(2)}</span>
               </div>
@@ -239,49 +311,51 @@ function App() {
                       </span>
                     </div>
                     <div className="bubble">
-                      <p>{msg.content}</p>
-                      <button
-                        className="copy-btn"
-                        onClick={() => copyToClipboard(msg.content)}
-                        title="Copy message"
-                        aria-label="Copy message"
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                      <div style={{ whiteSpace: 'pre-wrap' }}>
+                        {msg.content ? (
+                          msg.content.split('\n').map((line, idx) => (
+                            <p key={idx} style={{ margin: idx > 0 ? '0.5em 0' : '0' }}>
+                              {line}
+                            </p>
+                          ))
+                        ) : msg.isStreaming ? (
+                          <div className="bubble-typing">
+                            <span className="typing-dot" />
+                            <span className="typing-dot" />
+                            <span className="typing-dot" />
+                          </div>
+                        ) : null}
+                        {msg.isStreaming && msg.content && (
+                          <span className="streaming-cursor">▊</span>
+                        )}
+                      </div>
+                      {!msg.isStreaming && (
+                        <button
+                          className="copy-btn"
+                          onClick={() => copyToClipboard(msg.content)}
+                          title="Copy message"
+                          aria-label="Copy message"
                         >
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                      </button>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
 
-              {isSending && (
-                <div className="message-row assistant">
-                  <div className="avatar">
-                    <span className="avatar-initial">AI</span>
-                  </div>
-                  <div className="bubble-column">
-                    <div className="bubble-meta">
-                      <span className="bubble-author">AI assistant</span>
-                    </div>
-                    <div className="bubble bubble-typing">
-                      <span className="typing-dot" />
-                      <span className="typing-dot" />
-                      <span className="typing-dot" />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div ref={messagesEndRef} />
             </div>
@@ -292,7 +366,7 @@ function App() {
             <div className="chat-input-row">
               <textarea
                 className="chat-input"
-                placeholder="Ask anything about your project, e.g. “Explain how to structure my AI chatbot backend in Node.js.”"
+                placeholder="Pyet rreth FIEK... (Ask about FIEK...)"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
