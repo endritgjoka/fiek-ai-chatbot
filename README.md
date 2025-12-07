@@ -48,10 +48,34 @@ NLP-Projekti/
 - Python 3.8 or higher
 - pip (Python package manager)
 - Modern web browser
+- OpenAI API key (get one from https://platform.openai.com/api-keys)
+- (Optional) Tesseract OCR for scanned PDF support
 
 ### Installation Steps
 
-1. **Create and activate virtual environment (recommended):**
+#### Option 1: Automated Setup (Recommended)
+
+**On macOS/Linux:**
+```bash
+cd backend
+chmod +x setup_env.sh
+./setup_env.sh
+```
+
+**On Windows:**
+```bash
+cd backend
+setup_env.bat
+```
+
+The setup script will:
+- Create a virtual environment
+- Install all Python dependencies
+- Create a `.env` file template
+
+#### Option 2: Manual Setup
+
+1. **Create and activate virtual environment:**
 ```bash
 cd backend
 python3 -m venv venv
@@ -61,31 +85,72 @@ source venv/bin/activate  # On macOS/Linux
 
 2. **Install Python dependencies:**
 ```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-2. **Collect and prepare data:**
+3. **Set up environment variables:**
 ```bash
-# Option 1: Run automated setup (recommended)
-python setup.py
+# Copy the example file
+cp .env.example .env  # On macOS/Linux
+# On Windows: copy .env.example .env
 
-# Option 2: Manual setup
-python data_collection/scrape_data.py
-python data_collection/prepare_data.py
+# Edit .env and add your OpenAI API key
+# OPENAI_API_KEY=your_api_key_here
 ```
 
-**Note:** Data collection may take 10-15 minutes as it scrapes multiple web pages and PDFs. Be patient!
+4. **Install Playwright (REQUIRED for Cloudflare-protected pages):**
+   ```bash
+   # Install Playwright Python package
+   pip install playwright
+   
+   # Install Chromium browser (required - downloads ~150MB)
+   playwright install chromium
+   ```
+   
+   **Why?** The FIEK website uses Cloudflare protection. Without Playwright, most web pages will fail to scrape with "Cloudflare challenge page" errors.
+   
+   **Verify installation:**
+   ```bash
+   python -c "from playwright.sync_api import sync_playwright; print('✅ Playwright installed!')"
+   ```
+   
+   See `backend/INSTALL_PLAYWRIGHT.md` for detailed instructions and troubleshooting.
 
-3. **Start the backend server:**
+5. **Install Tesseract OCR (Optional - for scanned PDF support):**
+   - **macOS:** `brew install tesseract`
+   - **Ubuntu/Debian:** `sudo apt-get install tesseract-ocr`
+   - **Windows:** Download from [Tesseract installer](https://github.com/UB-Mannheim/tesseract/wiki)
+   - If Tesseract is in a non-standard location, set `TESSERACT_CMD` in your `.env` file
+
+6. **Ingest documents and build vector database:**
 ```bash
 # Make sure virtual environment is activated
-source venv/bin/activate  # On macOS/Linux
-python app.py
+python models/ingest.py
 ```
 
+This will:
+- Load PDFs from `./fiek_documents/` folder (create it if needed)
+- Scrape web pages from FIEK website
+- Build a vector database at `./fiek_db`
+
+**Note:** Data ingestion may take 10-15 minutes depending on the number of documents and web pages.
+
+6. **Start the backend server:**
+
+**Option A: Flask API**
+```bash
+python app.py
+```
 The server will start on `http://localhost:5001`
 
-4. **Open the frontend:**
+**Option B: Streamlit App**
+```bash
+streamlit run appV2.py
+```
+The app will open in your browser automatically
+
+7. **Open the frontend (if using Flask API):**
    - Open `frontend/index.html` in your web browser
    - Or use a local server (recommended):
    ```bash
@@ -113,10 +178,15 @@ The server will start on `http://localhost:5001`
 
 - **Backend:**
   - Flask (Web framework)
+  - Streamlit (Alternative web interface)
+  - LangChain (LLM framework)
+  - OpenAI (Embeddings and chat models)
+  - ChromaDB (Vector database)
   - Sentence Transformers (Multilingual embeddings)
-  - FAISS (Vector search)
+  - FAISS (Vector search - alternative)
   - BeautifulSoup4 (Web scraping)
-  - pdfplumber (PDF extraction)
+  - pdfplumber, PyPDF2 (PDF extraction)
+  - pytesseract, pdf2image (OCR for scanned PDFs)
 
 - **Frontend:**
   - HTML5, CSS3, JavaScript
@@ -150,7 +220,15 @@ The chatbot uses data from:
 
 ### Import errors
 - Ensure all dependencies are installed: `pip install -r backend/requirements.txt`
+- Make sure virtual environment is activated
 - Use Python 3.8 or higher
+- If using `ingest.py`, ensure you have set `OPENAI_API_KEY` in your `.env` file
+
+### OCR not working
+- Tesseract OCR is optional but required for scanned PDFs
+- Install Tesseract for your platform (see Installation Steps)
+- If Tesseract is installed but not found, set `TESSERACT_CMD` in your `.env` file
+- OCR will be automatically disabled if Tesseract is not available
 
 ## Development
 

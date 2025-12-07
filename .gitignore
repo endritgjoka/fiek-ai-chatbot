@@ -46,6 +46,10 @@ Desktop.ini
 *.index
 *.faiss
 
+# Vector databases
+fiek_db/
+backend/fiek_db/
+
 # Environment variables
 .env
 .env.local
