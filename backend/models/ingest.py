@@ -264,50 +264,97 @@ def extract_text_from_scanned_pdf(pdf_path):
 def load_documents():
     all_docs = []
 
-    # Load PDFs and text files if folder exists
+    # Load PDFs and text files if folder exists (recursively through subfolders)
     if os.path.exists(FOLDER_PATH):
-        for filename in os.listdir(FOLDER_PATH):
-            file_path = os.path.join(FOLDER_PATH, filename)
-            
-            # Handle PDF files
-            if filename.endswith(".pdf"):
-                try:
-                    loader = PyPDFLoader(file_path)
-                    pages = loader.load()
-                    
-                    if len(pages) > 0 and len(pages[0].page_content.strip()) < 10:
-                        raise ValueError("Empty text - likely scanned")
-                    
-                    print(f"📄 Loaded Digital PDF: {filename}")
-                    all_docs.extend(pages)
-                    
-                except Exception:
-                    print(f"⚠️ Digital read failed for {filename}. Switching to OCR...")
-                    raw_text = extract_text_from_scanned_pdf(file_path)
-                    if raw_text:
-                        doc = Document(page_content=raw_text, metadata={"source": filename, "type": "scanned_pdf"})
-                        all_docs.append(doc)
-            
-            # Handle text files
-            elif filename.endswith((".txt", ".text")):
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read().strip()
-                    
-                    if len(content) > 10:
-                        doc = Document(
-                            page_content=content,
-                            metadata={
-                                "source": filename,
-                                "type": "text_file"
-                            }
-                        )
-                        all_docs.append(doc)
-                        print(f"📝 Loaded Text File: {filename} ({len(content)} chars)")
-                    else:
-                        print(f"⚠️ Text file {filename} is too short or empty, skipping")
-                except Exception as e:
-                    print(f"⚠️ Failed to load text file {filename}: {e}")
+        # Use os.walk to recursively process all subfolders
+        for root, dirs, files in os.walk(FOLDER_PATH):
+            for filename in files:
+                file_path = os.path.join(root, filename)
+                
+                # Get relative path from FOLDER_PATH for metadata
+                rel_path = os.path.relpath(file_path, FOLDER_PATH)
+                # Use forward slashes for consistency across platforms
+                rel_path_normalized = rel_path.replace("\\", "/")
+                
+                # Handle PDF files
+                if filename.endswith(".pdf"):
+                    try:
+                        loader = PyPDFLoader(file_path)
+                        pages = loader.load()
+                        
+                        if len(pages) > 0 and len(pages[0].page_content.strip()) < 10:
+                            raise ValueError("Empty text - likely scanned")
+                        
+                        # Add folder path to metadata
+                        for page in pages:
+                            page.metadata["source"] = rel_path_normalized
+                            page.metadata["file_path"] = rel_path_normalized
+                        
+                        print(f"📄 Loaded Digital PDF: {rel_path_normalized}")
+                        all_docs.extend(pages)
+                        
+                    except Exception:
+                        print(f"⚠️ Digital read failed for {rel_path_normalized}. Switching to OCR...")
+                        raw_text = extract_text_from_scanned_pdf(file_path)
+                        if raw_text:
+                            doc = Document(
+                                page_content=raw_text, 
+                                metadata={
+                                    "source": rel_path_normalized,
+                                    "file_path": rel_path_normalized,
+                                    "type": "scanned_pdf"
+                                }
+                            )
+                            all_docs.append(doc)
+                
+                # Handle text files
+                elif filename.endswith((".txt", ".text")):
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read().strip()
+                        
+                        if len(content) > 10:
+                            doc = Document(
+                                page_content=content,
+                                metadata={
+                                    "source": rel_path_normalized,
+                                    "file_path": rel_path_normalized,
+                                    "type": "text_file"
+                                }
+                            )
+                            all_docs.append(doc)
+                            print(f"📝 Loaded Text File: {rel_path_normalized} ({len(content)} chars)")
+                        else:
+                            print(f"⚠️ Text file {rel_path_normalized} is too short or empty, skipping")
+                    except Exception as e:
+                        print(f"⚠️ Failed to load text file {rel_path_normalized}: {e}")
+                
+                # Handle DOCX files (optional - requires python-docx)
+                elif filename.endswith((".docx", ".doc")):
+                    try:
+                        try:
+                            from docx import Document as DocxDocument
+                            docx_doc = DocxDocument(file_path)
+                            content = "\n\n".join([para.text for para in docx_doc.paragraphs])
+                            
+                            if len(content.strip()) > 10:
+                                doc = Document(
+                                    page_content=content,
+                                    metadata={
+                                        "source": rel_path_normalized,
+                                        "file_path": rel_path_normalized,
+                                        "type": "docx_file"
+                                    }
+                                )
+                                all_docs.append(doc)
+                                print(f"📄 Loaded DOCX File: {rel_path_normalized} ({len(content)} chars)")
+                            else:
+                                print(f"⚠️ DOCX file {rel_path_normalized} appears empty, skipping")
+                        except ImportError:
+                            print(f"⚠️ DOCX file {rel_path_normalized} found but python-docx not installed. Skipping.")
+                            print(f"   💡 Install with: pip install python-docx")
+                    except Exception as e:
+                        print(f"⚠️ Failed to load DOCX file {rel_path_normalized}: {e}")
     else:
         print(f"⚠️ Folder '{FOLDER_PATH}' does not exist. Skipping file loading. Creating folder for future use...")
         os.makedirs(FOLDER_PATH, exist_ok=True)
@@ -717,12 +764,15 @@ def main():
     # Count by type
     pdf_count = sum(1 for doc in raw_docs if doc.metadata.get("type") in ["scanned_pdf", "pdf"])
     text_count = sum(1 for doc in raw_docs if doc.metadata.get("type") == "text_file")
+    docx_count = sum(1 for doc in raw_docs if doc.metadata.get("type") == "docx_file")
     web_count = sum(1 for doc in raw_docs if doc.metadata.get("type") == "website")
     staff_profile_count = sum(1 for doc in raw_docs if doc.metadata.get("type") == "staff_profile")
-    other_count = len(raw_docs) - pdf_count - text_count - web_count - staff_profile_count
+    other_count = len(raw_docs) - pdf_count - text_count - docx_count - web_count - staff_profile_count
     
     print(f"   📄 PDF documents: {pdf_count}")
     print(f"   📝 Text files: {text_count}")
+    if docx_count > 0:
+        print(f"   📄 DOCX files: {docx_count}")
     print(f"   🌐 Web documents: {web_count}")
     if staff_profile_count > 0:
         print(f"   👤 Staff profiles: {staff_profile_count}")
@@ -753,10 +803,13 @@ def main():
     staff_profile_chunks = sum(1 for split in splits if split.metadata.get("type") == "staff_profile")
     pdf_chunks = sum(1 for split in splits if split.metadata.get("type") in ["scanned_pdf", "pdf"])
     text_chunks = sum(1 for split in splits if split.metadata.get("type") == "text_file")
-    other_chunks = len(splits) - web_chunks - staff_profile_chunks - pdf_chunks - text_chunks
+    docx_chunks = sum(1 for split in splits if split.metadata.get("type") == "docx_file")
+    other_chunks = len(splits) - web_chunks - staff_profile_chunks - pdf_chunks - text_chunks - docx_chunks
     
     print(f"   📄 PDF chunks: {pdf_chunks}")
     print(f"   📝 Text file chunks: {text_chunks}")
+    if docx_chunks > 0:
+        print(f"   📄 DOCX file chunks: {docx_chunks}")
     print(f"   🌐 Web chunks: {web_chunks}")
     if staff_profile_chunks > 0:
         print(f"   👤 Staff profile chunks: {staff_profile_chunks}")
