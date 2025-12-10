@@ -18,10 +18,6 @@ function App() {
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState('')
   const [modelStatus, setModelStatus] = useState('online')
-  const [temperature, setTemperature] = useState(0.7)
-  const [systemPrompt, setSystemPrompt] = useState(
-    'You are a helpful AI assistant specialized in providing accurate information about FIEK faculty, programs, academic resources, and helping students with their questions.',
-  )
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
@@ -206,72 +202,34 @@ function App() {
 
           <div className="sidebar-section">
             <div className="sidebar-section-header">
-              <span>Session</span>
+              <span>About this assistant</span>
               <button className="ghost-btn" onClick={clearChat}>
-                Clear
+                New chat
               </button>
             </div>
-            <div className="session-card">
-              <div className="session-title">Current conversation</div>
-              <div className="session-meta">
-                <span className="pill pill-soft">Auto-saved</span>
-                <span className={`pill pill-status ${modelStatus}`}>
-                  <span className="status-dot" />
-                  {modelStatus === 'online' ? 'Model online' : 'Model offline'}
-                </span>
-              </div>
-            </div>
-          </div>
 
-          <div className="sidebar-section">
-            <div className="sidebar-section-header">
-              <span>Model controls</span>
+            <div className="info-card">
+              <div className="info-title">FIEK-focused help</div>
+              <p className="info-body">
+                This chatbot is tailored for the Faculty of Electrical and Computer Engineering (FIEK).
+                It uses retrieval-augmented generation to answer questions with up-to-date faculty
+                information in English or Albanian.
+              </p>
             </div>
 
-            <div className="control-group">
-              <label className="control-label">
-                System behavior
-                <span className="control-label-sub">
-                  System prompt is handled by the backend. This control is disabled.
-                </span>
-              </label>
-              <textarea
-                className="control-textarea"
-                value={systemPrompt}
-                onChange={(e) => setSystemPrompt(e.target.value)}
-                disabled
-                style={{ opacity: 0.6, cursor: 'not-allowed' }}
-              />
-            </div>
-
-            <div className="control-group">
-              <label className="control-label">
-                Temperature
-                <span className="control-label-sub">
-                  Temperature is set to 0 (focused) by the backend. This control is disabled.
-                </span>
-              </label>
-              <div className="control-row">
-                <input
-                  className="control-slider"
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={temperature}
-                  onChange={(e) => setTemperature(Number(e.target.value))}
-                  disabled
-                  style={{ opacity: 0.6, cursor: 'not-allowed' }}
-                />
-                <span className="slider-value">{temperature.toFixed(2)}</span>
-              </div>
+            <div className="info-list">
+              <div className="list-title">What it can do</div>
+              <ul>
+                <li>Explain academic programs and regulations (BSc, MSc, PhD).</li>
+                <li>Share course schedules, notices, and scholarship details.</li>
+                <li>Provide contacts for staff, offices, and student services.</li>
+                <li>Summarize projects, collaborations, and infrastructure info.</li>
+              </ul>
             </div>
 
             <div className="sidebar-footer">
-              <div className="footer-chip">Frontend only • React + Vite</div>
-              <div className="footer-chip">
-                Set backend URL in <code>App.jsx</code>
-              </div>
+              <div className="footer-chip">Bilingual (EN/AL)</div>
+              <div className="footer-chip">RAG-powered answers</div>
             </div>
           </div>
         </aside>
