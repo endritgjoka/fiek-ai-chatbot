@@ -21,7 +21,7 @@ knowledge_base/raw_data/
 *.pdf
 *.log
 *.tmp
-*.docs
+*.docx
 
 # IDE
 .vscode/
