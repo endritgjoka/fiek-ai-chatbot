@@ -13,6 +13,7 @@
 }
 
 .chat-layout {
+  height: 100vh;
   position: relative;
   z-index: 1;
   display: grid;
