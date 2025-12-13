@@ -334,29 +334,29 @@ The following graphs visualize the dataset composition, performance metrics, and
 
 #### Dataset Distribution
 
-![Document Type Distribution](graphs/document_distribution.png)
+![Document Type Distribution](graphs/results/document_distribution.png)
 
 #### Content Distribution
 
-![Content Distribution](graphs/content_distribution.png)
+![Content Distribution](graphs/results/content_distribution.png)
 
 #### Response Time Performance
 
-![Response Time Distribution](graphs/response_time.png)
+![Response Time Distribution](graphs/results/response_time.png)
 
 #### System Performance Metrics
 
-![Performance Metrics](graphs/performance_metrics.png)
+![Performance Metrics](graphs/results/performance_metrics.png)
 
 #### Dataset Statistics
 
-![Dataset Statistics](graphs/dataset_stats.png)
+![Dataset Statistics](graphs/results/dataset_stats.png)
 
 #### Processing Pipeline
 
-![Processing Pipeline](graphs/processing_pipeline.png)
+![Processing Pipeline](graphs/results/processing_pipeline.png)
 
-*Note: To generate these graphs, run `python generate_graphs.py` in the project root directory. This requires matplotlib to be installed.*
+*Note: To generate these graphs, run `python graphs/generate_graphs.py` in the project root directory. This requires matplotlib to be installed.*
 
 ### Limitations Identified
 
