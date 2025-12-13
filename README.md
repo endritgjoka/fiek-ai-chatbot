@@ -685,7 +685,7 @@ The application will open automatically in your browser at `http://localhost:850
 
 ## Future Work
 
-See `backend/latex/PUNE_E_ARDHSHME.tex` for detailed future work plans, including:
+Future work includes:
 - Performance optimizations
 - Functional extensions
 - Knowledge base improvements
@@ -725,26 +725,3 @@ A prototype version of this project is available in the `fiek-ai-chatbot-prototy
 The current version represents a complete redesign and improvement based on lessons learned from the prototype, with a more robust architecture, better data handling, and enhanced user experience.
 
 ---
-
-## License
-
-This project is developed for educational purposes as part of the Natural Language Processing course at the University of Prishtina.
-
----
-
-## Contact
-
-For questions, issues, or contributions, please contact the development team.
-
----
-
-## Acknowledgments
-
-- Faculty of Electrical and Computer Engineering (FIEK), University of Prishtina
-- OpenAI for API access
-- LangChain community for excellent documentation
-- All contributors and testers
-
----
-
-**Note**: This README follows the requirements specified for project documentation. All techniques, results, and decisions are explained in detail with justifications for each approach chosen.
