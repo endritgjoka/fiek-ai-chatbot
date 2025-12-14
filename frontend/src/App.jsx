@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
-const MODEL_BACKEND_URL = '/api/chat'
-const MODEL_BACKEND_STREAM_URL = '/api/chat/stream'
+// Use environment variable for API URL, fallback to relative path for same-domain or localhost for dev
+const API_BASE_URL = "https://fiek-ai-chatbot.onrender.com"
+const MODEL_BACKEND_URL = `${API_BASE_URL}/api/chat`
+const MODEL_BACKEND_STREAM_URL = `${API_BASE_URL}/api/chat/stream`
 
 function App() {
   const [messages, setMessages] = useState([
