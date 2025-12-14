@@ -26,11 +26,20 @@ vectorstore = None
 rag_chain = None
 
 def get_vectorstore():
-    """Get or initialize the Chroma vectorstore."""
+    """Get or initialize the Chroma vectorstore (lazy loading)."""
     global vectorstore
     if vectorstore is None:
-        embedding = OpenAIEmbeddings(model="text-embedding-3-small")
-        vectorstore = Chroma(persist_directory="./fiek_db", embedding_function=embedding)
+        try:
+            # Use lazy loading - only load when needed
+            embedding = OpenAIEmbeddings(model="text-embedding-3-small")
+            vectorstore = Chroma(
+                persist_directory="./fiek_db", 
+                embedding_function=embedding
+            )
+            print("Vectorstore loaded successfully")
+        except Exception as e:
+            print(f"Error loading vectorstore: {e}")
+            raise
     return vectorstore
 
 def get_rag_chain():
@@ -99,10 +108,11 @@ def initialize_chatbot():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint."""
+    """Health check endpoint - lightweight, doesn't initialize chatbot."""
     return jsonify({
         'status': 'healthy',
-        'chatbot_initialized': vectorstore is not None and rag_chain is not None
+        'chatbot_initialized': vectorstore is not None and rag_chain is not None,
+        'message': 'Server is running. Chatbot will initialize on first request.'
     })
 
 @app.route('/api/chat', methods=['POST'])
@@ -346,11 +356,13 @@ def initialize():
         return jsonify({'error': 'Failed to initialize'}), 500
 
 if __name__ == '__main__':
-    # Try to initialize on startup
-    initialize_chatbot()
+    # Don't initialize on startup - use lazy loading to save memory
+    # Initialize only when first request comes in
     
     # Run Flask app
-    # Use 5001 as default since 5000 is often used by macOS AirPlay
+    # Use PORT from environment (Render sets this automatically)
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    # Disable debug in production to save memory
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
 
