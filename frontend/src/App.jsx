@@ -62,7 +62,7 @@ function App() {
       const conversationMessages = messages
         .filter((msg) => msg.role !== 'system') // Remove any system messages from history
         .map(({ role, content }) => ({ role, content }))
-      
+
       // Add the current user message
       conversationMessages.push({ role: 'user', content: currentInput })
 
@@ -92,7 +92,7 @@ function App() {
 
       while (true) {
         const { done, value } = await reader.read()
-        
+
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
@@ -103,7 +103,7 @@ function App() {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6))
-              
+
               if (data.type === 'chunk') {
                 accumulatedContent += data.content
                 // Update the message in real-time
@@ -176,10 +176,15 @@ function App() {
     }
   }
 
-  const clearChat = () => {
-    setMessages((prev) => prev.slice(0, 1))
-    setError('')
+   const clearChat = () => {
+     setMessages((prev) => prev.slice(0, 1))
+     setError('')
+    setInput('')
   }
+
+  const clearInput = () => {
+    setInput('')
+   }
 
   const copyToClipboard = async (text) => {
     try {
@@ -405,7 +410,7 @@ function App() {
                 <button
                   className="secondary-btn"
                   type="button"
-                  onClick={clearChat}
+                  onClick={clearInput}
                   disabled={isSending}
                 >
                   Clear
