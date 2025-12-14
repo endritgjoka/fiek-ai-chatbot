@@ -177,6 +177,11 @@ function App() {
   const clearChat = () => {
     setMessages((prev) => prev.slice(0, 1))
     setError('')
+    setInput('')
+  }
+
+  const clearInput = () => {
+    setInput('')
   }
 
   const copyToClipboard = async (text) => {
@@ -335,7 +340,7 @@ function App() {
                 <button
                   className="secondary-btn"
                   type="button"
-                  onClick={clearChat}
+                  onClick={clearInput}
                   disabled={isSending}
                 >
                   Clear
