@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './App.css'
 
 // Use environment variable for API URL, fallback to relative path for same-domain or localhost for dev
@@ -177,11 +179,6 @@ function App() {
   const clearChat = () => {
     setMessages((prev) => prev.slice(0, 1))
     setError('')
-    setInput('')
-  }
-
-  const clearInput = () => {
-    setInput('')
   }
 
   const copyToClipboard = async (text) => {
@@ -249,10 +246,6 @@ function App() {
                 Start by describing your assignment, then ask specific questions.
               </div>
             </div>
-            <div className="chat-header-logo">
-              <img src="/Up.png" alt="FIEK Logo" className="logo-image" />
-              <span className="logo-text">FIEK AI CHATBOT</span>
-            </div>
           </header>
 
           <section className="chat-stream">
@@ -276,13 +269,88 @@ function App() {
                       </span>
                     </div>
                     <div className="bubble">
-                      <div style={{ whiteSpace: 'pre-wrap' }}>
+                      <div className="markdown-content">
                         {msg.content ? (
-                          msg.content.split('\n').map((line, idx) => (
-                            <p key={idx} style={{ margin: idx > 0 ? '0.5em 0' : '0' }}>
-                              {line}
-                            </p>
-                          ))
+                          <>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                // Style code blocks
+                                code: ({ node, inline, className, children, ...props }) => {
+                                  const match = /language-(\w+)/.exec(className || '')
+                                  return !inline && match ? (
+                                    <pre style={{
+                                      background: 'rgba(0, 0, 0, 0.3)',
+                                      padding: '0.5em',
+                                      borderRadius: '4px',
+                                      overflow: 'auto',
+                                      margin: '0.5em 0',
+                                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                                    }}>
+                                      <code className={className} {...props} style={{ color: '#f9fafb' }}>
+                                        {children}
+                                      </code>
+                                    </pre>
+                                  ) : (
+                                    <code style={{
+                                      background: 'rgba(255, 255, 255, 0.1)',
+                                      padding: '0.2em 0.4em',
+                                      borderRadius: '3px',
+                                      fontSize: '0.9em',
+                                      color: '#f9fafb',
+                                      fontFamily: 'Courier New, monospace'
+                                    }} {...props}>
+                                      {children}
+                                    </code>
+                                  )
+                                },
+                                // Style links
+                                a: ({ node, ...props }) => (
+                                  <a {...props} target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa' }} />
+                                ),
+                                // Style lists
+                                ul: ({ node, ...props }) => (
+                                  <ul {...props} style={{ margin: '0.5em 0', paddingLeft: '1.5em' }} />
+                                ),
+                                ol: ({ node, ...props }) => (
+                                  <ol {...props} style={{ margin: '0.5em 0', paddingLeft: '1.5em' }} />
+                                ),
+                                // Style paragraphs
+                                p: ({ node, ...props }) => (
+                                  <p {...props} style={{ margin: '0.5em 0', lineHeight: '1.6' }} />
+                                ),
+                                // Style headings
+                                h1: ({ node, ...props }) => (
+                                  <h1 {...props} style={{ fontSize: '1.5em', margin: '0.8em 0 0.4em 0', fontWeight: 'bold' }} />
+                                ),
+                                h2: ({ node, ...props }) => (
+                                  <h2 {...props} style={{ fontSize: '1.3em', margin: '0.7em 0 0.3em 0', fontWeight: 'bold' }} />
+                                ),
+                                h3: ({ node, ...props }) => (
+                                  <h3 {...props} style={{ fontSize: '1.1em', margin: '0.6em 0 0.3em 0', fontWeight: 'bold' }} />
+                                ),
+                                // Style blockquotes
+                                blockquote: ({ node, ...props }) => (
+                                  <blockquote {...props} style={{
+                                    borderLeft: '3px solid rgba(255, 255, 255, 0.3)',
+                                    paddingLeft: '1em',
+                                    margin: '0.5em 0',
+                                    fontStyle: 'italic',
+                                    color: 'rgba(255, 255, 255, 0.8)'
+                                  }} />
+                                ),
+                                // Style horizontal rules
+                                hr: ({ node, ...props }) => (
+                                  <hr {...props} style={{ margin: '1em 0', border: 'none', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }} />
+                                ),
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
+                            {msg.isStreaming && (
+                              <span className="streaming-cursor">▊</span>
+                            )}
+                          </>
                         ) : msg.isStreaming ? (
                           <div className="bubble-typing">
                             <span className="typing-dot" />
@@ -290,9 +358,6 @@ function App() {
                             <span className="typing-dot" />
                           </div>
                         ) : null}
-                        {msg.isStreaming && msg.content && (
-                          <span className="streaming-cursor">▊</span>
-                        )}
                       </div>
                       {!msg.isStreaming && (
                         <button
@@ -340,7 +405,7 @@ function App() {
                 <button
                   className="secondary-btn"
                   type="button"
-                  onClick={clearInput}
+                  onClick={clearChat}
                   disabled={isSending}
                 >
                   Clear
